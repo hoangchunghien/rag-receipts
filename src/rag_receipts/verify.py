@@ -39,7 +39,8 @@ _FOLD = str.maketrans(
     }
 )
 _NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)*(?![\w])")
-_CODE = re.compile(r"`([^`]+)`")
+_CODE = re.compile(r"`([^`\n]+)`")
+_FENCE = re.compile(r"```.*?```", re.DOTALL)
 
 
 def fold(text: str) -> str:
@@ -94,13 +95,17 @@ def check_claim(claim: Claim, sources: dict[str, str], question: str = "") -> Cl
     return claim
 
 
-def unsupported_specifics(sentence: str, cited_texts: list[str]) -> list[str]:
+def unsupported_specifics(sentence: str, cited_texts: list[str], question: str = "") -> list[str]:
     """Numbers and code names in `sentence` that none of the cited texts contain.
 
-    Used to score answers that carry no quotes (the naive baseline) by the same rule as check 3.
+    Used to score answers that carry no quotes (the plain baseline) by the same rule as
+    check 3, including its allowance for numbers taken from the question. Fenced code
+    examples are skipped: they are illustrations, not claims about the source.
     """
+    sentence = _FENCE.sub(" ", sentence)
     folded = [fold(t) for t in cited_texts]
     numbers_in_sources = {n for t in folded for n in _NUMBER.findall(t)}
+    numbers_in_sources |= set(_NUMBER.findall(fold(question)))
     missing = [n for n in _NUMBER.findall(sentence) if n not in numbers_in_sources]
     missing += [c for c in _CODE.findall(sentence) if not any(fold(c) in t for t in folded)]
     return missing

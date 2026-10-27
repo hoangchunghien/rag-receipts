@@ -47,37 +47,54 @@ match as any other.
 
 40 Python Enhancement Proposals (public domain), 22 questions they answer, and 14 "traps":
 plausible Python questions the corpus does not answer, such as `typing.override` or the
-`zoneinfo` module. Same model (`qwen2.5:3b` on Ollama), same retrieval, temperature 0.
+`zoneinfo` module. Plain RAG and checked mode get the same retrieved passages and the same
+instruction to say so when the passages do not answer. Temperature 0, local models on Ollama.
 
-| | plain RAG | checked |
-|---|---|---|
-| Answerable: answered | 86% (19/22) | 82% (18/22) |
-| Answerable: answered with a citation you can follow | 9% (2/22) | 82% (18/22) |
-| Answerable: ... and it points at the right PEP | 9% (2/22) | 68% (15/22) |
-| Traps: answered anyway (lower is better) | 0% (0/14) | 0% (0/14) |
-| Answers with a number or code name not in their sources | 5% (1/19) | 0 (check 3 cuts them) |
+| | 3B, nomic embeddings | 7B, nomic embeddings | 3B, Qwen3-Embedding-8B |
+|---|---|---|---|
+| Answered (of 22): plain / checked | 19 / 18 | 22 / 22 | 21 / 18 |
+| ... with a citation you can follow | 2 / 18 | 16 / 22 | 2 / 18 |
+| ... that points at the right PEP | 2 / 15 | 14 / 19 | 2 / 17 |
+| Traps answered anyway (of 14): plain / checked | 0 / 0 | 0 / 0 | 0 / 2 |
+| Plain answers citing a passage that lacks one of their numbers or code names | 1 of 19 | 2 of 22 | 0 of 21 |
 
-The plain baseline gets the same sources and the same "say NOT_FOUND if the sources do not
-answer" instruction. It answers about as often, but a 3B model rarely writes the `[S1]`
-markers it was asked for, so 17 of its 19 answers cannot be traced to anything. Checked mode
-costs one answer and makes every remaining sentence traceable to an exact passage.
+Chat models: `qwen2.5:3b` and `qwen2.5:7b`. Embeddings: `nomic-embed-text` on Ollama, or
+`Qwen3-Embedding-8B` on llama.cpp's `llama-server` (any `/v1/embeddings` server works).
 
-In checked mode the model proposed 22 claims: 17 passed first time, 1 more after the repair
-round, and 2 kept claims had their citation moved to the passage that really holds the
-quote. On one trap ("which PEP introduced asyncio?") the model answered "PEP 492"; check 3
-cut it because the passage it cited never mentions 492.
+What the numbers say:
 
-Full per-question output: [`docs/results/`](docs/results/). Reproduce with
+- **Checked answers are traceable; plain ones often are not.** A 3B model rarely writes
+  the `[S1]` markers it is asked for, so 17 of its 19 plain answers point at nothing. The
+  7B model cites more often, but its citations are right less often than checked mode's
+  (14 vs 19 of 22).
+- **The checks cost little with a stronger model.** The 7B model answered all 22 in both
+  modes; checked mode added a verified quote to every sentence.
+- **Re-attribution matters.** Across the runs, 8 kept claims quoted real text but cited
+  the wrong passage. Instead of being cut, they were pointed at the passage that holds
+  the quote.
+- **The specifics check catches real slips.** Asked which PEP introduced asyncio (it is
+  not in the corpus), the 3B model answered "PEP 492"; check 3 cut it because the passage
+  it cited never mentions 492.
+
+Per-question output and summaries: [`docs/results/`](docs/results/). Reproduce with
 `receipts eval examples/questions.jsonl`.
 
 ## What it does not prove
 
 A verified quote proves the words exist in the source. It does not prove the sentence
-follows from them. In the run above, a sentence about `async with` cited a real quote from
-the async generators PEP: every check passed and the sentence was still wrong. The receipt
-makes that visible in one click, which is the point, but it is not a truth guarantee.
-Retrieval can also miss the passage that answers the question, in which case the honest
-output is "the documents I was given do not answer this".
+follows from them. The third run shows this plainly. With better retrieval, the 3B model
+answered two traps with real quotes and wrong sentences:
+
+- "How do you mark a TypedDict item as ReadOnly?" was answered with the PEP 591 passage on
+  `@final`.
+- "What file name does the standard lock file format use?" was answered with a rejected
+  idea from PEP 723 (a `.reqs` file next to the script).
+
+Every check passed. The receipt makes the mistake visible in one click, which is the
+point, but it is not a truth guarantee. A natural next check is relevance: the cited passage
+should mention what the question asks about (`ReadOnly`, "lock file"). Retrieval can also
+miss the passage that answers the question, and then the honest output is "the documents I
+was given do not answer this".
 
 ## Quick start
 
@@ -92,6 +109,8 @@ receipts ingest examples/peps                  # or your own .md / .rst / .txt /
 receipts ask "What does the walrus operator do?" --html receipt.html
 receipts ask "..." --plain                     # the baseline, for comparison
 receipts ask "..." --model anthropic/claude-sonnet-5   # needs ANTHROPIC_API_KEY
+receipts --embedder openai/qwen3-embedding-8b --embedder-url http://localhost:8081/v1 ingest docs/
+                                               # any /v1/embeddings server
 receipts eval examples/questions.jsonl         # checked vs plain on your question set
 ```
 
@@ -103,6 +122,8 @@ PDF support: `pip install 'rag-receipts[pdf]'`.
   so a quote can be highlighted in the original text.
 - `index.py`: one SQLite file. FTS5 (BM25) for exact names like `TypeVarTuple`, embeddings
   for paraphrases, merged with reciprocal rank fusion.
+- `models.py`: Ollama, Anthropic and OpenAI-compatible clients. Embedders know whether
+  they embed a question or a document, for instruction-tuned models like Qwen3-Embedding.
 - `answer.py`: the claim format, the repair round, and the plain baseline.
 - `verify.py`: the three checks. No model involved.
 - `evaluate.py`: the comparison above.

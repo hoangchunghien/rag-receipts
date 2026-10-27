@@ -136,9 +136,12 @@ def plain_unsupported(answer: Answer) -> list[str]:
     """Per sentence of a plain answer: numbers or code names its cited sources do not contain."""
     problems: list[str] = []
     sources = {f"S{i + 1}": hit.chunk.text for i, hit in enumerate(answer.hits)}
-    for sentence in re.split(r"(?<=[.!?])\s+", answer.text):
+    text = re.sub(r"```.*?```", " ", answer.text, flags=re.DOTALL)
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
         cited = [sources[s] for s in re.findall(r"\[(S\d+)\]", sentence) if s in sources]
-        problems.extend(unsupported_specifics(sentence, cited or list(sources.values())))
+        problems.extend(
+            unsupported_specifics(sentence, cited or list(sources.values()), answer.question)
+        )
     return problems
 
 

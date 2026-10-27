@@ -73,3 +73,8 @@ def test_fold_ignores_cosmetic_differences_only() -> None:
 def test_unsupported_specifics_flags_numbers_and_code_names() -> None:
     missing = unsupported_specifics("Added in 3.9, raises `TypeError`.", [SOURCE])
     assert missing == ["3.9", "TypeError"]
+
+
+def test_unsupported_specifics_allows_question_numbers_and_skips_code_fences() -> None:
+    answer = "PEP 8 says so.\n```\ndef f[T](x: T) -> T: ...\n```"
+    assert unsupported_specifics(answer, [SOURCE], question="What does PEP 8 say?") == []
