@@ -1,0 +1,36 @@
+{"id": "a01", "question": "What syntax does PEP 604 allow for writing union types?", "expect": ["pep-0604"], "answerable": true}
+{"id": "a02", "question": "What does the walrus operator := do, according to PEP 572?", "expect": ["pep-0572"], "answerable": true}
+{"id": "a03", "question": "What is the maximum line length PEP 8 recommends for code?", "expect": ["pep-0008"], "answerable": true}
+{"id": "a04", "question": "Which Python version first shipped f-strings as described in PEP 498?", "expect": ["pep-0498"], "answerable": true}
+{"id": "a05", "question": "What problem does PEP 703 solve by making the GIL optional?", "expect": ["pep-0703"], "answerable": true}
+{"id": "a06", "question": "How does PEP 723 let a single-file script declare its dependencies?", "expect": ["pep-0723"], "answerable": true}
+{"id": "a07", "question": "What is a Template string (t-string) in PEP 750 and how is it different from an f-string?", "expect": ["pep-0750"], "answerable": true}
+{"id": "a08", "question": "What does the except* syntax in PEP 654 handle?", "expect": ["pep-0654"], "answerable": true}
+{"id": "a09", "question": "What new syntax does PEP 695 introduce for declaring type parameters on generic classes and functions?", "expect": ["pep-0695"], "answerable": true}
+{"id": "a10", "question": "What is the Self type from PEP 673 used for?", "expect": ["pep-0673"], "answerable": true}
+{"id": "a11", "question": "What does PEP 557 say a data class is and what methods does it generate?", "expect": ["pep-0557"], "answerable": true}
+{"id": "a12", "question": "What does PEP 585 allow you to do with standard collection types like list and dict in annotations?", "expect": ["pep-0585"], "answerable": true}
+{"id": "a13", "question": "What are dependency groups in pyproject.toml, as defined by PEP 735?", "expect": ["pep-0735"], "answerable": true}
+{"id": "a14", "question": "What does PEP 701 change about the grammar of f-strings?", "expect": ["pep-0701"], "answerable": true}
+{"id": "a15", "question": "What is the async with statement introduced by PEP 492 for?", "expect": ["pep-0492"], "answerable": true}
+{"id": "a16", "question": "What does PEP 618 add to the zip() built-in?", "expect": ["pep-0618"], "answerable": true}
+{"id": "a17", "question": "What does PEP 612 ParamSpec let you express?", "expect": ["pep-0612"], "answerable": true}
+{"id": "a18", "question": "What does PEP 646 TypeVarTuple enable?", "expect": ["pep-0646"], "answerable": true}
+{"id": "a19", "question": "What is the purpose of the match statement described in PEP 634?", "expect": ["pep-0634", "pep-0636"], "answerable": true}
+{"id": "a20", "question": "What does PEP 593 Annotated let you attach to a type?", "expect": ["pep-0593"], "answerable": true}
+{"id": "a23", "question": "What does PEP 3107 define for function annotations?", "expect": ["pep-3107"], "answerable": true}
+{"id": "a24", "question": "What does PEP 744 propose to add to CPython?", "expect": ["pep-0744"], "answerable": true}
+{"id": "u01", "question": "What does the typing.override decorator do, and which PEP added it?", "expect": [], "trap": "PEP 698 is not in the corpus", "answerable": false}
+{"id": "u02", "question": "How do you mark a TypedDict item as ReadOnly?", "expect": [], "trap": "PEP 705 is not in the corpus", "answerable": false}
+{"id": "u03", "question": "What does TypeIs do and how does it differ from TypeGuard?", "expect": [], "trap": "PEP 742 is not in the corpus", "answerable": false}
+{"id": "u04", "question": "In which Python version did the free-threaded build become officially supported?", "expect": [], "trap": "PEP 779 is not in the corpus", "answerable": false}
+{"id": "u05", "question": "What is the default maxsize of functools.lru_cache?", "expect": [], "trap": "not a PEP topic in the corpus", "answerable": false}
+{"id": "u06", "question": "Which module provides IANA time zone support in the standard library, and from which version?", "expect": [], "trap": "PEP 615 (zoneinfo) is not in the corpus", "answerable": false}
+{"id": "u07", "question": "What does the built-in breakpoint() function call by default?", "expect": [], "trap": "PEP 553 is not in the corpus", "answerable": false}
+{"id": "u08", "question": "What file name does the standard lock file format for Python use?", "expect": [], "trap": "PEP 751 (pylock.toml) is not in the corpus", "answerable": false}
+{"id": "u09", "question": "On what date was Python 3.14.0 released?", "expect": [], "trap": "release dates are not in the corpus", "answerable": false}
+{"id": "u10", "question": "How do I configure middleware in Django?", "expect": [], "trap": "off-topic", "answerable": false}
+{"id": "u11", "question": "What is the recommended way to pin a GitHub Action to a commit SHA?", "expect": [], "trap": "off-topic", "answerable": false}
+{"id": "u12", "question": "Which PEP introduced the asyncio module and the event loop API?", "expect": [], "trap": "PEP 3156 is only mentioned in passing; not in the corpus", "answerable": false}
+{"id": "u13", "question": "Which dictionary operators does PEP 584 add?", "expect": [], "trap": "PEP 584 is not in the corpus", "answerable": false}
+{"id": "u14", "question": "What does PEP 616 add for removing prefixes from strings?", "expect": [], "trap": "PEP 616 is not in the corpus", "answerable": false}

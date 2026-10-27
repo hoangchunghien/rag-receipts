@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What does PEP 618 add to the zip() built-in?</title>
+<style>
+:root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --mark:#fff1a8; --line:#e3e6ea;
+        --cut:#b42318; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#111418; --fg:#e6e9ed; --muted:#9aa4b0; --mark:#5c4b00; --line:#2a3038;
+          --cut:#f97066; }
+}
+body { background:var(--bg); color:var(--fg); font:16px/1.55 system-ui, sans-serif;
+       max-width:46rem; margin:2rem auto; padding:0 1rem; }
+h1 { font-size:1.35rem; } h2 { font-size:1.05rem; margin-top:2rem; }
+.answer { font-size:1.1rem; } .meta, .src, .why { color:var(--muted); font-size:.9rem; }
+blockquote { white-space:pre-wrap; border-left:3px solid var(--line); margin:.4rem 0 1.2rem;
+             padding:.2rem .8rem; font-size:.9rem; max-height:14rem; overflow:auto; }
+mark { background:var(--mark); color:inherit; }
+.cut { color:var(--cut); text-decoration:line-through; }
+li { margin-bottom:.6rem; }
+</style></head><body><h1>What does PEP 618 add to the zip() built-in?</h1><p class="answer">PEP 618 adds an optional &#x27;strict&#x27; boolean keyword parameter to the built-in &#x27;zip&#x27;.</p><p class="meta">ollama/qwen2.5:3b · 1 kept · 0 cut</p><h2>Receipts</h2><ol><li><p class="claim">PEP 618 adds an optional &#x27;strict&#x27; boolean keyword parameter to the built-in &#x27;zip&#x27;. <sup>[1]</sup></p><p class="src">Add Optional Length-Checking To zip · <code>pep-0618#0</code></p><blockquote>PEP: 618
+Title: Add Optional Length-Checking To zip
+Author: Brandt Bucher &lt;brandt@python.org&gt;
+Sponsor: Antoine Pitrou &lt;antoine@python.org&gt;
+BDFL-Delegate: Guido van Rossum &lt;guido@python.org&gt;
+Status: Final
+Type: Standards Track
+Created: 01-May-2020
+Python-Version: 3.10
+Post-History: 01-May-2020, 10-May-2020, 16-Jun-2020
+Resolution: https://mail.python.org/archives/list/python-dev@python.org/message/NLWB7FVJGMBBMCF4P3ZKUIE53JPDOWJ3
+
+
+Abstract
+========
+
+<mark>This PEP proposes adding an optional ``strict`` boolean keyword
+parameter to the built-in ``zip``.</mark>  When enabled, a ``ValueError`` is
+raised if one of the arguments is exhausted before the others.
+
+
+Motivation
+==========</blockquote></li></ol></body></html>
