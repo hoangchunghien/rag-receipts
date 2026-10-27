@@ -20,7 +20,7 @@ class ChatModel(Protocol):
 class Embedder(Protocol):
     name: str
 
-    def embed(self, texts: list[str]) -> NDArray[np.float32]: ...
+    def embed(self, texts: list[str], is_query: bool = False) -> NDArray[np.float32]: ...
 
 
 class OllamaChat:
@@ -60,7 +60,7 @@ class OllamaEmbedder:
         self._model = model
         self._host = host or os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 
-    def embed(self, texts: list[str]) -> NDArray[np.float32]:
+    def embed(self, texts: list[str], is_query: bool = False) -> NDArray[np.float32]:
         vectors: list[list[float]] = []
         for start in range(0, len(texts), 32):
             response = _post_with_retry(
@@ -69,6 +69,62 @@ class OllamaEmbedder:
             )
             vectors.extend(response.json()["embeddings"])
         return _normalise(np.asarray(vectors, dtype=np.float32))
+
+
+# Qwen3-Embedding expects an instruction on queries and nothing on documents.
+QWEN3_QUERY_TEMPLATE = (
+    "Instruct: Given a question, retrieve passages from technical documents that answer it\n"
+    "Query: {text}"
+)
+
+
+class OpenAICompatibleEmbedder:
+    """Any `/v1/embeddings` server: OpenAI, vLLM, LM Studio, or llama.cpp's `llama-server`.
+
+    `query_template` wraps questions (not documents) for models trained with an instruction,
+    such as Qwen3-Embedding; use `{text}` where the question goes.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        query_template: str | None = None,
+    ) -> None:
+        self.name = f"openai/{model}"
+        self._model = model
+        self._base = base_url or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        self._key = api_key or os.environ.get("OPENAI_API_KEY", "")
+        self._query_template = query_template
+
+    def embed(self, texts: list[str], is_query: bool = False) -> NDArray[np.float32]:
+        if is_query and self._query_template:
+            texts = [self._query_template.format(text=t) for t in texts]
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), 32):
+            response = _post_with_retry(
+                f"{self._base}/embeddings",
+                {"model": self._model, "input": texts[start : start + 32]},
+                headers={"Authorization": f"Bearer {self._key}"} if self._key else None,
+            )
+            rows = sorted(response.json()["data"], key=lambda row: row["index"])
+            vectors.extend(row["embedding"] for row in rows)
+        return _normalise(np.asarray(vectors, dtype=np.float32))
+
+
+def embedder(spec: str, base_url: str | None = None, query_template: str | None = None) -> Embedder:
+    """Build an embedder from `provider/model`; a bare model name means Ollama."""
+    provider, _, model = spec.partition("/")
+    if not model:
+        return OllamaEmbedder(provider)
+    if provider == "ollama":
+        return OllamaEmbedder(model)
+    if provider == "openai":
+        if query_template is None and "qwen3" in model.lower():
+            query_template = QWEN3_QUERY_TEMPLATE
+        return OpenAICompatibleEmbedder(model, base_url=base_url, query_template=query_template)
+    raise ValueError(f"unknown embedding provider {provider!r}; use ollama/ or openai/")
 
 
 class AnthropicChat:
@@ -133,11 +189,13 @@ def chat_model(spec: str) -> ChatModel:
     raise ValueError(f"unknown provider {provider!r}; use ollama/, anthropic/ or openai/")
 
 
-def _post_with_retry(url: str, body: dict[str, Any], attempts: int = 3) -> httpx.Response:
-    """POST to a local model server, retrying 5xx and connection errors with back-off."""
+def _post_with_retry(
+    url: str, body: dict[str, Any], attempts: int = 3, headers: dict[str, str] | None = None
+) -> httpx.Response:
+    """POST to a model server, retrying 5xx and connection errors with back-off."""
     for attempt in range(attempts):
         try:
-            response = httpx.post(url, json=body, timeout=300)
+            response = httpx.post(url, json=body, headers=headers, timeout=300)
             if response.status_code < 500:
                 response.raise_for_status()
                 return response

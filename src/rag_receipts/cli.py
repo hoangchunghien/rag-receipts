@@ -9,14 +9,21 @@ from pathlib import Path
 from .answer import ask_checked, ask_plain
 from .documents import load_documents
 from .index import Index
-from .models import OllamaEmbedder, chat_model
+from .models import chat_model, embedder
 from .render import to_html, to_terminal
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="receipts", description=__doc__)
     parser.add_argument("--index", default="receipts.db", help="index file (default receipts.db)")
-    parser.add_argument("--embedder", default="nomic-embed-text", help="Ollama embedding model")
+    parser.add_argument(
+        "--embedder",
+        default="ollama/nomic-embed-text",
+        help="provider/model: ollama/<model> or openai/<model> (any /v1/embeddings server)",
+    )
+    parser.add_argument(
+        "--embedder-url", help="base URL for openai/ embedders, e.g. http://localhost:8081/v1"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     ingest = sub.add_parser("ingest", help="add files or folders to the index")
@@ -36,7 +43,7 @@ def main(argv: list[str] | None = None) -> int:
     evaluate.add_argument("-k", type=int, default=6)
 
     args = parser.parse_args(argv)
-    index = Index(args.index, OllamaEmbedder(args.embedder))
+    index = Index(args.index, embedder(args.embedder, base_url=args.embedder_url))
 
     if args.command == "ingest":
         added = index.add(load_documents(args.paths))

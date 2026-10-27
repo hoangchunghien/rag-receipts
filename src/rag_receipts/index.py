@@ -132,7 +132,7 @@ class Index:
                 return []
             self._ids = [r[0] for r in rows]
             self._matrix = np.vstack([np.frombuffer(r[1], dtype=np.float32) for r in rows])
-        query_vector = self._embedder.embed([query])[0]
+        query_vector = self._embedder.embed([query], is_query=True)[0]
         scores = self._matrix @ query_vector
         order = np.argsort(-scores)[:limit]
         return [self._ids[i] for i in order]

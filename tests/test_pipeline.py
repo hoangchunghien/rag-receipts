@@ -31,7 +31,7 @@ class WordEmbedder:
     name = "test/words"
     vocabulary: ClassVar[list[str]] = ["zip", "strict", "valueerror", "exhausted", "django"]
 
-    def embed(self, texts: list[str]) -> NDArray[np.float32]:
+    def embed(self, texts: list[str], is_query: bool = False) -> NDArray[np.float32]:
         rows = [[t.lower().count(w) + 0.01 for w in self.vocabulary] for t in texts]
         vectors = np.asarray(rows, dtype=np.float32)
         return vectors / np.linalg.norm(vectors, axis=1, keepdims=True)
