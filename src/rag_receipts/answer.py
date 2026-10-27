@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 from .index import Hit, Index
 from .models import ChatModel
-from .verify import Claim, check_claim, fold, unsupported_specifics
+from .verify import Claim, check_claim, fold, missing_names, unsupported_specifics
 
 NOT_FOUND = "The documents I was given do not answer this."
 
@@ -42,10 +42,17 @@ class Answer:
     raw: str = ""
     first_pass: int = 0
     repaired: int = 0
+    # Question names that no cited passage mentions (check 4); set means the answer was refused.
+    off_topic: list[str] = field(default_factory=list)
 
     @property
     def kept(self) -> list[Claim]:
-        return [c for c in self.claims if c.verified]
+        return [] if self.off_topic else [c for c in self.claims if c.verified]
+
+    @property
+    def set_aside(self) -> list[Claim]:
+        """Claims that passed checks 1 to 3 but answer a different question (check 4)."""
+        return [c for c in self.claims if c.verified] if self.off_topic else []
 
     @property
     def cut(self) -> list[Claim]:
@@ -101,6 +108,9 @@ def ask_checked(
         claims = [c for c in claims if c.verified] + fixed + still_cut
         raw = f"{raw}\n--- repair ---\n{raw_repair}"
     kept = [c for c in claims if c.verified]
+    off_topic = missing_names(question, [sources[c.source] for c in kept]) if kept else []
+    if off_topic:
+        kept = []
     text = " ".join(c.sentence.strip() for c in kept) if kept else NOT_FOUND
     return Answer(
         question,
@@ -113,6 +123,7 @@ def ask_checked(
         raw=raw,
         first_pass=first_pass,
         repaired=len(fixed),
+        off_topic=off_topic,
     )
 
 

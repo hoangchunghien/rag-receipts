@@ -11,6 +11,16 @@ from that source. A claim is kept only if:
 Check 2 proves provenance: the words exist. It does not prove the sentence follows from them.
 Check 3 catches the commonest way a fluent sentence drifts from its quote: a version, year,
 count or identifier that the source never mentions.
+
+One check applies to the answer as a whole:
+
+4. every code-like name in the question (`ReadOnly`, `typing.override`, `lru_cache`) occurs
+   in at least one cited passage. Otherwise the answer is about something else, however
+   real its quotes are, and the question is treated as unanswered.
+
+Check 4 looks only at names, not ordinary words: in the bundled evaluation, rare question
+words were mostly phrasing ("shipped", "attach") and refused good answers, while names
+caught the traps. A trap phrased in plain words ("the lock file format") still gets past it.
 """
 
 from __future__ import annotations
@@ -93,6 +103,42 @@ def check_claim(claim: Claim, sources: dict[str, str], question: str = "") -> Cl
         if fold(code) not in folded_source:
             claim.problems.append(f"`{code}` is not in the cited source")
     return claim
+
+
+# Backticked text, dotted names, camelCase / PascalCase with an inner capital, snake_case.
+_NAME = re.compile(
+    r"`[^`\n]+`"
+    r"|\b[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+\b"
+    r"|\b[a-z]+[A-Z]\w*\b"
+    r"|\b[A-Z][a-z0-9]+[A-Z]\w*\b"
+    r"|\b\w*[a-zA-Z]_\w+\b"
+)
+
+
+def question_names(question: str) -> list[str]:
+    """The code-like names a question asks about, in the order they appear."""
+    names: list[str] = []
+    for match in _NAME.findall(question):
+        name = match.strip("`")
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def missing_names(question: str, cited_texts: list[str]) -> list[str]:
+    """Names from the question that none of the cited passages mention (check 4).
+
+    A name counts as mentioned when each of its parts does: `typing.override` needs both
+    "typing" and "override", in any case, so `TypedDict` matches ``TypedDict`` and
+    typeddict alike.
+    """
+    text = " ".join(cited_texts).lower()
+    missing = []
+    for name in question_names(question):
+        parts = [p for p in re.findall(r"[a-z0-9]+", name.lower()) if len(p) > 2]
+        if parts and not all(p in text for p in parts):
+            missing.append(name)
+    return missing
 
 
 def unsupported_specifics(sentence: str, cited_texts: list[str], question: str = "") -> list[str]:

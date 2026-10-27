@@ -41,6 +41,12 @@ def main(argv: list[str] | None = None) -> int:
     evaluate.add_argument("--model", default="ollama/qwen2.5:3b")
     evaluate.add_argument("--out", type=Path, default=Path("eval-results.jsonl"))
     evaluate.add_argument("-k", type=int, default=6)
+    evaluate.add_argument(
+        "--rescore",
+        type=Path,
+        metavar="RESULTS",
+        help="re-apply the checks to a previous run's saved outputs instead of calling a model",
+    )
 
     args = parser.parse_args(argv)
     index = Index(args.index, embedder(args.embedder, base_url=args.embedder_url))
@@ -60,9 +66,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\nreceipt written to {args.html}", file=sys.stderr)
         return 0
 
-    from .evaluate import run_eval
+    from .evaluate import rescore, run_eval
 
-    report = run_eval(args.questions, index, chat_model(args.model), args.out, k=args.k)
+    if args.rescore:
+        report = rescore(args.questions, index, args.rescore, args.out, k=args.k, model=args.model)
+    else:
+        report = run_eval(args.questions, index, chat_model(args.model), args.out, k=args.k)
     print(report)
     return 0
 

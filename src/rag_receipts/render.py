@@ -17,6 +17,12 @@ def to_terminal(answer: Answer) -> str:
         hit = sources[claim.source]
         lines.append(f"[{n}] {hit.title} ({hit.chunk.chunk_id})")
         lines.append(f'    "{claim.quote.strip()}"')
+    if answer.set_aside:
+        names = ", ".join(answer.off_topic)
+        lines.append(f"Set aside {len(answer.set_aside)} sentence(s): their quotes are real, but")
+        lines.append(f"none of the cited passages mention {names}.")
+        for claim in answer.set_aside:
+            lines.append(f"  - {claim.sentence.strip()}")
     if answer.cut:
         lines.append("")
         lines.append(f"Cut {len(answer.cut)} sentence(s) that failed the checks:")
@@ -36,6 +42,9 @@ def to_html(answer: Answer) -> str:
             f'<p class="src">{html.escape(hit.title)} · <code>{html.escape(hit.chunk.chunk_id)}'
             f"</code></p><blockquote>{_highlight(hit.chunk.text, claim.quote)}</blockquote></li>"
         )
+    aside_rows = [
+        f'<li><p class="claim cut">{html.escape(c.sentence)}</p></li>' for c in answer.set_aside
+    ]
     cut_rows = [
         f'<li><p class="claim cut">{html.escape(c.sentence)}</p>'
         f'<p class="why">{html.escape("; ".join(c.problems))}</p></li>'
@@ -47,6 +56,12 @@ def to_html(answer: Answer) -> str:
         f'<p class="meta">{html.escape(answer.model)} · {len(answer.kept)} kept · '
         f"{len(answer.cut)} cut</p>"
         + (f"<h2>Receipts</h2><ol>{''.join(kept_rows)}</ol>" if kept_rows else "")
+        + (
+            f"<h2>Set aside: no cited passage mentions {html.escape(', '.join(answer.off_topic))}"
+            f"</h2><ul>{''.join(aside_rows)}</ul>"
+            if aside_rows
+            else ""
+        )
         + (f"<h2>Cut by the checks</h2><ul>{''.join(cut_rows)}</ul>" if cut_rows else "")
     )
     return PAGE.replace("{{title}}", html.escape(answer.question)).replace("{{body}}", body)

@@ -1,4 +1,11 @@
-from rag_receipts.verify import Claim, check_claim, fold, unsupported_specifics
+from rag_receipts.verify import (
+    Claim,
+    check_claim,
+    fold,
+    missing_names,
+    question_names,
+    unsupported_specifics,
+)
 
 SOURCE = (
     "This PEP proposes adding an optional ``strict`` boolean keyword\n"
@@ -78,3 +85,18 @@ def test_unsupported_specifics_flags_numbers_and_code_names() -> None:
 def test_unsupported_specifics_allows_question_numbers_and_skips_code_fences() -> None:
     answer = "PEP 8 says so.\n```\ndef f[T](x: T) -> T: ...\n```"
     assert unsupported_specifics(answer, [SOURCE], question="What does PEP 8 say?") == []
+
+
+def test_question_names_finds_code_like_names_only() -> None:
+    question = (
+        "How do I mark a `TypedDict` item ReadOnly, and does typing.override or lru_cache help?"
+    )
+    assert question_names(question) == ["TypedDict", "ReadOnly", "typing.override", "lru_cache"]
+    assert question_names("Which Python version first shipped f-strings in PEP 498?") == []
+
+
+def test_missing_names_ignores_case_and_markup_but_needs_every_part() -> None:
+    passages = ["A ``TypedDict`` maps keys to types.", "See typing for details."]
+    assert missing_names("Can a TypedDict item be ReadOnly?", passages) == ["ReadOnly"]
+    assert missing_names("What is typing.override?", passages) == ["typing.override"]
+    assert missing_names("What is a TypedDict?", passages) == []

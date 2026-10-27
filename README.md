@@ -38,8 +38,12 @@ code checks the working without another model:
    occurs in the cited passage (or in the question). This catches the most common way a
    fluent sentence drifts from its quote: a version, year, count or identifier that the
    source never mentions.
+4. **The answer is about the question.** Every code-like name in the question (`ReadOnly`,
+   `typing.override`, `lru_cache`) must appear in at least one cited passage. Otherwise the
+   quotes may be real but answer something else, and the question is treated as
+   unanswered. The sentences are shown as "set aside", with the missing name.
 
-Claims that fail get one repair round: the model is told which quotes were not found and
+Claims that fail checks 1 to 3 get one repair round: the model is told which quotes were not found and
 may copy the exact words or drop the sentence. A repaired claim passes the same string
 match as any other.
 
@@ -55,7 +59,7 @@ instruction to say so when the passages do not answer. Temperature 0, local mode
 | Answered (of 22): plain / checked | 19 / 18 | 22 / 22 | 21 / 18 |
 | ... with a citation you can follow | 2 / 18 | 16 / 22 | 2 / 18 |
 | ... that points at the right PEP | 2 / 15 | 14 / 19 | 2 / 17 |
-| Traps answered anyway (of 14): plain / checked | 0 / 0 | 0 / 0 | 0 / 2 |
+| Traps answered anyway (of 14): plain / checked | 0 / 0 | 0 / 0 | 0 / 1 |
 | Plain answers citing a passage that lacks one of their numbers or code names | 1 of 19 | 2 of 22 | 0 of 21 |
 
 Chat models: `qwen2.5:3b` and `qwen2.5:7b`. Embeddings: `nomic-embed-text` on Ollama, or
@@ -86,15 +90,19 @@ follows from them. The third run shows this plainly. With better retrieval, the 
 answered two traps with real quotes and wrong sentences:
 
 - "How do you mark a TypedDict item as ReadOnly?" was answered with the PEP 591 passage on
-  `@final`.
+  `@final`. Check 4, added in 0.2, now sets this aside: no cited passage mentions
+  `ReadOnly`.
 - "What file name does the standard lock file format use?" was answered with a rejected
-  idea from PEP 723 (a `.reqs` file next to the script).
+  idea from PEP 723 (a `.reqs` file next to the script). This one still gets through:
+  the question has no code-like name, and PEP 723 really does talk about lock files.
 
-Every check passed. The receipt makes the mistake visible in one click, which is the
-point, but it is not a truth guarantee. A natural next check is relevance: the cited passage
-should mention what the question asks about (`ReadOnly`, "lock file"). Retrieval can also
-miss the passage that answers the question, and then the honest output is "the documents I
-was given do not answer this".
+Check 4 looks only at names on purpose. Trying rare question words as well
+("lock", "shipped", "attach") caught nothing more and, across the three runs, refused 7 to 13 good
+answers, because rare question words are mostly phrasing. Telling a near miss from an
+answer in plain words needs meaning, not string matching. The receipt makes such a mistake
+visible in one click, which is the point, but it is not a truth guarantee. Retrieval can
+also miss the passage that answers the question, and then the honest output is "the
+documents I was given do not answer this".
 
 ## Quick start
 
@@ -112,6 +120,8 @@ receipts ask "..." --model anthropic/claude-sonnet-5   # needs ANTHROPIC_API_KEY
 receipts --embedder openai/qwen3-embedding-8b --embedder-url http://localhost:8081/v1 ingest docs/
                                                # any /v1/embeddings server
 receipts eval examples/questions.jsonl         # checked vs plain on your question set
+receipts eval examples/questions.jsonl --rescore docs/results/qwen2.5-3b.jsonl
+                                               # change a check, re-score saved outputs, no model
 ```
 
 PDF support: `pip install 'rag-receipts[pdf]'`.

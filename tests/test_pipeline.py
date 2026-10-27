@@ -113,3 +113,25 @@ def test_plain_mode_is_the_baseline_without_checks(index: Index) -> None:
     assert not answer.refused
     assert re.search(r"\[S1\]", answer.text)
     assert ask_plain("django?", index, ScriptedModel("NOT_FOUND")).refused
+
+
+def test_real_quotes_that_answer_a_different_question_are_set_aside(index: Index) -> None:
+    # The quote is real and passes checks 1 to 3, but no cited passage mentions ReadOnly.
+    model = ScriptedModel(
+        claims(
+            ("Use strict to mark it ReadOnly.", "S1", "adding an optional strict boolean keyword")
+        )
+    )
+    answer = ask_checked("How do I make a zip ReadOnly?", index, model)
+    assert answer.refused
+    assert answer.text == NOT_FOUND
+    assert answer.off_topic == ["ReadOnly"]
+    assert [c.sentence for c in answer.set_aside] == ["Use strict to mark it ReadOnly."]
+    assert "none of the cited passages mention ReadOnly" in to_terminal(answer)
+
+
+def test_replay_feeds_saved_outputs_in_order_then_no_claims() -> None:
+    from rag_receipts.evaluate import ReplayModel
+
+    replay = ReplayModel("test/replay", ["first", "second"])
+    assert [replay.complete("s", "u") for _ in range(3)] == ["first", "second", '{"claims": []}']

@@ -1,6 +1,6 @@
 [project]
 name = "rag-receipts"
-version = "0.1.0"
+version = "0.2.0"
 description = "RAG answers you can check: every sentence carries a verbatim quote, verified by string match, or it is cut."
 readme = "README.md"
 license = "Apache-2.0"
